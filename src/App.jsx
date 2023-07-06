@@ -5,6 +5,7 @@ import './App.scss';
 import usersFromServer from './api/users';
 import categoriesFromServer from './api/categories';
 import productsFromServer from './api/products';
+import categories from './api/categories';
 
 const products = productsFromServer.map((product) => {
   const category = categoriesFromServer.find(
@@ -15,10 +16,11 @@ const products = productsFromServer.map((product) => {
   return { ...product, category, user };
 });
 
-// console.log(products);
 
-function getFilteredProduct(productsForfilter, filter, query) {
+
+function getFilteredProduct(productsForfilter, filter, query, selectedCategory) {
   let filteredProducts = [...productsForfilter];
+
 
   if (query) {
     const normalizedQuery = query.toLowerCase();
@@ -34,14 +36,25 @@ function getFilteredProduct(productsForfilter, filter, query) {
     );
   }
 
+  if (selectedCategory.length > 0) {
+   filteredProducts = filteredProducts.filter(product => selectedCategory.includes(product.category.title));
+  }
+
   return filteredProducts;
 }
 
 export const App = () => {
   const [filterName, setFilterName] = useState('all');
   const [query, setQuery] = useState('');
+  const [selectCategory, setSelectCategory] = useState([]);
 
-  const visibleProducts = getFilteredProduct(products, filterName, query);
+  const visibleProducts = getFilteredProduct(products, filterName, query, selectCategory);
+
+  const resetFilter = () => {
+    setFilterName('all');
+    setQuery('');
+    setSelectCategory([]);
+  }
 
   return (
     <div className="section">
@@ -63,50 +76,21 @@ export const App = () => {
               >
                 All
               </a>
-
+                {
+                  usersFromServer.map( user => (
               <a
+                key={user.id}
                 data-cy="FilterUser"
                 href="#/"
                 onClick={() => {
-                  setFilterName('Roma');
+                  setFilterName(user.name );
                 }}
-                className={cn({ 'is-active': filterName === 'Roma' })}
+                className={cn({ 'is-active': filterName === user.name })}
               >
-                Roma
+                {user.name }
               </a>
-
-              <a
-                data-cy="FilterUser"
-                href="#/"
-                className={cn({ 'is-active': filterName === 'Anna' })}
-                onClick={() => {
-                  setFilterName('Anna');
-                }}
-              >
-                Anna
-              </a>
-
-              <a
-                data-cy="FilterUser"
-                href="#/"
-                onClick={() => {
-                  setFilterName('Max');
-                }}
-                className={cn({ 'is-active': filterName === 'Max' })}
-              >
-                Max
-              </a>
-
-              <a
-                data-cy="FilterUser"
-                href="#/"
-                onClick={() => {
-                  setFilterName('John');
-                }}
-                className={cn({ 'is-active': filterName === 'John' })}
-              >
-                John
-              </a>
+                  ))
+                }
             </p>
 
             <div className="panel-block">
@@ -143,33 +127,28 @@ export const App = () => {
               <a
                 href="#/"
                 data-cy="AllCategories"
-                className="button is-success mr-6 is-outlined"
+                className={cn('button is-success mr-6',{
+                  'is-outlined':selectCategory.length === 0
+                })}
+                onClick={()=>setSelectCategory([])}
               >
                 All
               </a>
-
-              <a
-                data-cy="Category"
-                className="button mr-2 my-1 is-info"
-                href="#/"
-              >
-                Category 1
-              </a>
-
-              <a data-cy="Category" className="button mr-2 my-1" href="#/">
-                Category 2
-              </a>
-
-              <a
-                data-cy="Category"
-                className="button mr-2 my-1 is-info"
-                href="#/"
-              >
-                Category 3
-              </a>
-              <a data-cy="Category" className="button mr-2 my-1" href="#/">
-                Category 4
-              </a>
+                {
+                  categories.map(category => (
+                    <a
+                    key={category.id}
+                    data-cy="Category"
+                    className={cn('button mr-2 my-1',{
+                      "is-info":selectCategory.includes(category.title)
+                    })}
+                    href="#/"
+                    onClick={()=>setSelectCategory([...selectCategory, category.title])}
+                  >
+                    {category.title}
+                  </a>
+                  ))
+                }
             </div>
 
             <div className="panel-block">
@@ -177,10 +156,7 @@ export const App = () => {
                 data-cy="ResetAllButton"
                 href="#/"
                 className="button is-link is-outlined is-fullwidth"
-                onClick={()=>{
-                  setFilterName('all');
-                  setQuery('');
-                }}
+                onClick={resetFilter}
               >
                 Reset all filters
               </a>
